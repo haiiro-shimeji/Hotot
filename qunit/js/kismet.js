@@ -63,3 +63,27 @@ test("kismet.read_tokens", function() {
     })();
 
 });
+
+test("kismet.compile", function() {
+
+    //parse column filter
+    (function() {
+        var result = kismet.compile("column:home");
+        deepEqual(
+            result,
+            {name:"",cond:[],action:[],column:["home"]}
+        );
+        deepEqual(kismet.rule_string, "Drop the tweet if it ON COLUMN home");
+    })();
+
+    //parse column filter (multiple columns)
+    (function() {
+        var result = kismet.compile("column:home|mensions");
+        deepEqual(
+            result,
+            {name:"",cond:[],action:[],column:["home","mensions"]}
+        );
+        deepEqual(kismet.rule_string, "Drop the tweet if it ON COLUMN home or mensions");
+    })();
+
+});
