@@ -64,7 +64,62 @@ test("kismet.read_tokens", function() {
 
 });
 
-test("kismet.compile", function() {
+test("kismet.eval_cond more than 2 conditions", function() {
+
+    (function() {
+
+        var temp = kismet.eval_bool_exp;
+        kismet.eval_bool_exp = function(cond) {
+            return (cond.constructor == Array);
+        };
+
+        ok(kismet.eval_cond([[4,"$NAME","ABC"],[11,"$TEXT","hoge"],[11,"$TEXT","fuga"]]));
+
+        kismet.eval_bool_exp = temp;
+
+    })();
+
+    (function() {
+
+        var temp = kismet.eval_bool_exp;
+        kismet.eval_bool_exp = function(cond) {
+            return (cond.constructor == Array)
+                && (cond[2] == "ABC" || cond[2] == "hoge");
+        };
+
+        ok(!kismet.eval_cond([[4,"$NAME","ABC"],[11,"$TEXT","hoge"],[11,"$TEXT","fuga"]]));
+
+        kismet.eval_bool_exp = temp;
+
+    })();
+
+});
+
+test("kismet.compile column filter", function() {
+
+    //parse 2 conditions
+    (function() {
+        var result = kismet.compile("name:ABC hoge");
+        deepEqual(
+            result,
+            {name:"",cond:[[4,"$NAME","ABC"],[11,"$TEXT","hoge"]],action:[],column:[]}
+        );
+        deepEqual(kismet.rule_string, "Drop the tweet if it SENT BY @ABC and CONTAINS hoge");
+    })();
+
+    //parse 3 conditions
+    (function() {
+        var result = kismet.compile("name:ABC hoge fuga");
+        deepEqual(
+            result,
+            {name:"",cond:[[4,"$NAME","ABC"],[11,"$TEXT","hoge"],[11,"$TEXT","fuga"]],action:[],column:[]}
+        );
+        deepEqual(kismet.rule_string, "Drop the tweet if it SENT BY @ABC and CONTAINS hoge and CONTAINS fuga");
+    })();
+
+});
+
+test("kismet.compile column filter", function() {
 
     //parse column filter
     (function() {
