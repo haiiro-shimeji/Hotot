@@ -403,20 +403,21 @@ function slide_to(id) {
 
     $('#main_page_slider').css('width', max_col_num + '00%');
     // slide page
-    if (conf.get_current_profile()) {
-        // @TODO
-        if (1) {
-            ui.Slider.me.stop().transition(
-                {marginLeft: (0 - page_offset * width) +'px'}
-                , 500
-                , function () {
-                    $('#main_page_slider').css('width', 'auto');
-                }
-            );
-        } else {
-            ui.Slider.me.css('marginLeft', (0 - page_offset * width) +'px');
-            $('#main_page_slider').css('width', 'auto');
-        }
+    var promise;
+    var prof = conf.get_current_profile();
+    if (prof && prof.preferences.enable_animation) {
+        promise = ui.Slider.me.stop().transition(
+            {marginLeft: (0 - page_offset * width) +'px'}
+            , 500
+            , function () {
+                $('#main_page_slider').css('width', 'auto');
+            }
+        )
+        .promise();
+    } else {
+        ui.Slider.me.css('marginLeft', (0 - page_offset * width) +'px');
+        $('#main_page_slider').css('width', 'auto');
+        promise = $.Deferred().resolve();
     }
 
     // get displayed pages
@@ -440,37 +441,39 @@ function slide_to(id) {
     }
      
     // change indicators style
-    var all_btns = $('#indication').find('.indicator_btn');
-    var cur_sel = $.map(ui.Slider.displayed, function (item) {
-        return $('#indication .indicator_btn[href="#'+item+'"]');
-    });
-    if (cur_sel.length == 0) return;
-    $('#indication_light').stop().transition(
-          { 'left': cur_sel[0].parent().get(0).offsetLeft + 1,
-            'width':
-                  cur_sel[cur_sel.length - 1].parent().get(0).offsetLeft 
-                + cur_sel[cur_sel.length - 1].parent().width()
-                - cur_sel[0].parent().get(0).offsetLeft
-          }
-        , 200 
-        , function () {
-            // remove selected style from the pre ones
-            if (all_btns) {
-                all_btns.removeClass('selected');
-                all_btns.removeClass('current');
-                all_btns.next('.shape').hide();
-            }
-            // add selected style to displayed pages' indicator
-            $.each(cur_sel, function (i, obj) {
-                if (obj.attr('href') == '#'+ui.Slider.current) {
-                    obj.next('.shape').show();
-                    obj.addClass('current');
+    promise.then(function() {
+        var all_btns = $('#indication').find('.indicator_btn');
+        var cur_sel = $.map(ui.Slider.displayed, function (item) {
+            return $('#indication .indicator_btn[href="#'+item+'"]');
+        });
+        if (cur_sel.length == 0) return;
+        $('#indication_light').stop().transition(
+              { 'left': cur_sel[0].parent().get(0).offsetLeft + 1,
+                'width':
+                      cur_sel[cur_sel.length - 1].parent().get(0).offsetLeft 
+                    + cur_sel[cur_sel.length - 1].parent().width()
+                    - cur_sel[0].parent().get(0).offsetLeft
+              }
+            , 200 
+            , function () {
+                // remove selected style from the pre ones
+                if (all_btns) {
+                    all_btns.removeClass('selected');
+                    all_btns.removeClass('current');
+                    all_btns.next('.shape').hide();
                 }
-                obj.addClass('selected');
-                obj.removeClass('unread');
-            });
-        }
-    );    
+                // add selected style to displayed pages' indicator
+                $.each(cur_sel, function (i, obj) {
+                    if (obj.attr('href') == '#'+ui.Slider.current) {
+                        obj.next('.shape').show();
+                        obj.addClass('current');
+                    }
+                    obj.addClass('selected');
+                    obj.removeClass('unread');
+                });
+            }
+        );
+    });
     $(ui.Main.selected_tweet_id).removeClass('selected'); 
     ui.Main.selected_tweet_id = null;
     $('#tweet_bar').hide();
